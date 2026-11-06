@@ -1,0 +1,131 @@
+const express = require("express");
+const { MercadoPagoConfig, Preference } = require("mercadopago");
+const { nanoid } = require("nanoid");
+const fs = require("fs");
+const path = require("path");
+
+const router = express.Router();
+
+const DATA_DIR = path.join(__dirname, "..", "data");
+const PEDIDOS_FILE = path.join(DATA_DIR, "pedidos.json");
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(PEDIDOS_FILE)) fs.writeFileSync(PEDIDOS_FILE, "[]");
+
+function lerPedidos() {
+  return JSON.parse(fs.readFileSync(PEDIDOS_FILE, "utf-8"));
+}
+function salvarPedido(pedido) {
+  const todos = lerPedidos();
+  todos.push(pedido);
+  fs.writeFileSync(PEDIDOS_FILE, JSON.stringify(todos, null, 2));
+}
+
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN || "TEST-TOKEN-NAO-CONFIGURADO"
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const { cliente, metodo, itens, frete } = req.body;
+
+    if (!cliente || !itens || itens.length === 0) {
+      return res.status(400).json({ erro: "Dados incompletos." });
+    }
+    if (!process.env.MP_ACCESS_TOKEN) {
+      return res.status(500).json({ erro: "Gateway de pagamento não configurado. Defina MP_ACCESS_TOKEN no .env" });
+    }
+
+    // Cálculo no servidor — nunca confiar no cliente
+    const subtotal = itens.reduce((s, i) => s + Number(i.preco) * Number(i.qtd), 0);
+    const total = subtotal + Number(frete?.valor || 0);
+    const pedidoId = "OMX-" + nanoid(8).toUpperCase();
+
+    const pedido = {
+      id: pedidoId,
+      criadoEm: new Date().toISOString(),
+      cliente: {
+        nome: cliente.nome,
+        email: cliente.email,
+        telefone: cliente.telefone,
+        cpf: cliente.cpf,
+        endereco: {
+          cep: cliente.cep,
+          logradouro: cliente.endereco,
+          numero: cliente.numero,
+          complemento: cliente.complemento || "",
+          bairro: cliente.bairro,
+          cidade: cliente.cidade,
+          estado: cliente.estado
+        }
+      },
+      itens,
+      frete,
+      subtotal,
+      total,
+      metodo: metodo,
+      status: "pending"
+    };
+    salvarPedido(pedido);
+
+    // Monta preferência do Mercado Pago
+    const preference = new Preference(client);
+    const body = {
+      external_reference: pedidoId,
+      items: itens.map(i => ({
+        title: i.nome,
+        quantity: i.qtd,
+        unit_price: Number(i.preco),
+        currency_id: "BRL"
+      })),
+      payer: {
+        name: cliente.nome,
+        email: cliente.email,
+        identification: { type: "CPF", number: cliente.cpf.replace(/\D/g, "") },
+        phone: { number: cliente.telefone.replace(/\D/g, "") },
+        address: {
+          zip_code: cliente.cep.replace(/\D/g, ""),
+          street_name: cliente.endereco,
+          street_number: cliente.numero
+        }
+      },
+      back_urls: {
+        success: `${process.env.FRONTEND_URL}/pedido-confirmado.html`,
+        failure: `${process.env.FRONTEND_URL}/pedido-confirmado.html`,
+        pending: `${process.env.FRONTEND_URL}/pedido-confirmado.html`
+      },
+      auto_return: "approved",
+      notification_url: `${process.env.BACKEND_URL || "http://localhost:3000"}/api/webhook/mercadopago`,
+      payment_methods: {
+        excluded_payment_types: metodo === "pix"
+          ? [{ id: "credit_card" }, { id: "ticket" }]
+          : metodo === "boleto"
+            ? [{ id: "credit_card" }, { id: "bank_transfer" }]
+            : []
+      },
+      shipments: {
+        cost: Number(frete?.valor || 0),
+        mode: "not_specified"
+      }
+    };
+
+    const result = await preference.create({ body });
+
+    return res.json({
+      pedidoId,
+      status: "pending",
+      init_point: result.init_point,
+      sandbox_init_point: result.sandbox_init_point
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ erro: err.message || "Erro ao criar preferência." });
+  }
+});
+
+router.get("/:id", (req, res) => {
+  const pedido = lerPedidos().find(p => p.id === req.params.id);
+  if (!pedido) return res.status(404).json({ erro: "Pedido não encontrado." });
+  res.json(pedido);
+});
+
+module.exports = router;

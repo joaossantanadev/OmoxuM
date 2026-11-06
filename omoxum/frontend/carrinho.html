@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrinho — OmoxuM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container">
+      <a href="index.html" class="logo">OmoxuM</a>
+      <button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="menu">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="produtos.html">Produtos</a></li>
+        <li><a href="index.html#essencia">Nossa Essência</a></li>
+        <li><a href="produtos.html" class="btn-loja">Loja</a></li>
+        <li>
+          <a href="carrinho.html" class="carrinho-link" aria-label="Carrinho">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6L5 3H2"/></svg>
+            <span class="cart-count" data-cart-count>0</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="carrinho-page container">
+    <h1>Seu carrinho</h1>
+    <div class="carrinho-grid">
+      <div id="carrinhoItens" class="carrinho-itens"></div>
+      <aside class="resumo">
+        <h2>Resumo</h2>
+        <div class="resumo-linha"><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
+        <div class="resumo-linha">
+          <span>Frete</span>
+          <span id="frete">Calcular</span>
+        </div>
+        <div class="frete-form">
+          <input type="text" id="cep" placeholder="CEP (só números)" maxlength="8" inputmode="numeric" />
+          <button class="btn-outline" id="btnFrete">Calcular</button>
+        </div>
+        <div class="resumo-linha total"><span>Total</span><span id="total">R$ 0,00</span></div>
+        <a href="checkout.html" class="btn-primary full" id="btnCheckout">Finalizar compra</a>
+        <a href="produtos.html" class="link-continuar">← Continuar comprando</a>
+      </aside>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container footer-base">
+      <p>© <span id="ano"></span> OmoxuM. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="js/produtos.js"></script>
+  <script src="js/carrinho.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

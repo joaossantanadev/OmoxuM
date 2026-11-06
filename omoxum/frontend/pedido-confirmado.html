@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedido — OmoxuM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container">
+      <a href="index.html" class="logo">OmoxuM</a>
+    </nav>
+  </header>
+
+  <section class="confirmacao container center">
+    <p class="eyebrow">Pedido recebido</p>
+    <h1 id="statusTitulo">Aguardando confirmação do pagamento</h1>
+    <p class="lead" id="statusTexto">Assim que o pagamento for confirmado pelo gateway, você receberá os detalhes por e-mail.</p>
+    <div class="pedido-info" id="pedidoInfo"></div>
+    <a href="produtos.html" class="btn-primary">Continuar comprando</a>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container footer-base">
+      <p>© <span id="ano"></span> OmoxuM.</p>
+    </div>
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

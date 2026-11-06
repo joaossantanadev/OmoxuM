@@ -1,0 +1,39 @@
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const { MercadoPagoConfig, Payment } = require("mercadopago");
+
+const router = express.Router();
+const PEDIDOS_FILE = path.join(__dirname, "..", "data", "pedidos.json");
+
+const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+
+router.post("/mercadopago", async (req, res) => {
+  try {
+    const { type, data } = req.body;
+    if (type !== "payment" || !data?.id) return res.sendStatus(200);
+
+    // Consulta o pagamento diretamente na API — fonte de verdade
+    const payment = new Payment(client);
+    const info = await payment.get({ id: data.id });
+
+    if (!info || !info.external_reference) return res.sendStatus(200);
+
+    const pedidos = JSON.parse(fs.readFileSync(PEDIDOS_FILE, "utf-8"));
+    const pedido = pedidos.find(p => p.id === info.external_reference);
+    if (!pedido) return res.sendStatus(200);
+
+    pedido.status = info.status; // approved | rejected | pending | in_process | expired
+    pedido.mpPaymentId = info.id;
+    pedido.mpStatusDetail = info.status_detail;
+    pedido.atualizadoEm = new Date().toISOString();
+
+    fs.writeFileSync(PEDIDOS_FILE, JSON.stringify(pedidos, null, 2));
+    return res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook erro:", err);
+    return res.sendStatus(500);
+  }
+});
+
+module.exports = router;
